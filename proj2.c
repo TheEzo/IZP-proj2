@@ -10,52 +10,27 @@ double mylog(double x);
 double mypow(double x, double y);
 
 
-double ezpow(double x, unsigned int n){
-    double vysledek = 1;
-    for(unsigned int i = 0; i < n; i++){
-        vysledek *= x;
-    }
-    return vysledek;
-}
-
-double pi(unsigned int n){
-    double vysledek = 0;
-    unsigned int z = 1;
-    for(unsigned int i = 0; i < n; i++){
-        vysledek = ezpow(z, 2) / (6 + vysledek);
-        z += 2;
-    }
-
-    return 3 + 1/vysledek;
-}
-
-double sqrt_2(unsigned int n){
-    double vysledek = 0;
-    for(int i = 0; i < n; i++)
-        vysledek = 1.0/ (2 + vysledek);
-
-    return 1 + vysledek;
-}
-
-
 int main() {
-    printf("%.12g\n", taylor_log(0.1, 1000));
-    printf("%.12g\n", log(0.1));
-    printf("%.12g\n", cfrac_log(0.1, 1000));
-    //printf("**************************************\n\n");
-    //printf("%.12g\n", sqrt_2(1000));
-    //printf("%.12g\n", pi(10000));
+    double x = 1.131401114526;
+    printf("%.12g\n", log(x));
+    printf("%.12g\n", cfrac_log(x, 4));
+    printf("%.12g\n", taylor_log(x, 4));
+    printf("**************\n");
+    printf("%.12g\n", pow(1.23, 4.2));
+    printf("%.12g\n", taylor_pow(1.23, 4.2, 4));
+    printf("%.12g\n", taylorcf_pow(1.23, 4.2, 4));
     return 0;
 }
 
 double taylor_log(double x, unsigned int n){
     unsigned int i;
     double pom = 0;
-    double vysledek = 0;
+    double vysledek = 0, pow_x = 1;
     if(x <= 1) {
         x = 1-x;
         for (i = 1; i < n + 1; i++) {
-            pom = ezpow(x, i) / i;
+            pow_x *= x;
+            pom = pow_x / i;
             vysledek -= pom;
             if (pom == 0)
                 break;
@@ -63,7 +38,8 @@ double taylor_log(double x, unsigned int n){
     }
     else{
         for(i = 1; i < n + 1; i++){
-            pom = ezpow((x-1)/x, i) / i;
+            pow_x *= (x-1) / x;
+            pom = pow_x / i;
             if(pom == 0)
                 break;
             vysledek += pom;
@@ -78,34 +54,43 @@ double cfrac_log(double x, unsigned int n){
     x = (x - 1) / (x + 1);
     unsigned int cislo = 2 * n + 1;
     for(unsigned int i = n; i > 0 && cislo >= 3; i--){
-        //printf("%gz^2 / (%d - %.12g)\n", ezpow(i, 2), cislo, vysledek);
-        vysledek = (ezpow(i, 2) * ezpow(x, 2)) / (cislo - vysledek);
-        //printf("%d,%d       ", i, cislo);
+        vysledek = (i*i * x*x) / (cislo - vysledek);
         cislo -= 2;
     }
     return (2 * x)/ (1 - vysledek);
 
-    /*//double z = (x - 1)/(x + 1);
-    double vysledek = 0;
-    double z = (1 + x) / (1 - x);
-    unsigned int prvni_cislo = 3;
-    for(unsigned int i = 1; i < n + 1; i++){
-        vysledek = (ezpow(i, 2) * ezpow(z, 2)) / (prvni_cislo - vysledek);
-        prvni_cislo += 2;
-    }
-    //vysledek = (2 * z) / (1 - vysledek);
-    vysledek = (1 + vysledek) / (1 - vysledek);*/
-    return vysledek;
 }
-/*
-double taylor_pow(double x, double y, unsigned int n){
 
+double taylor_pow(double x, double y, unsigned int n){
+    double vysledek = 0, pom, pow_y = 1, pow_log = 1;
+    for(unsigned int i = 1; i <= n; i++){
+        pow_y *= y;
+        pow_log *= taylor_log(x, n);
+        pom = pow_y * pow_log;
+        for(unsigned int j = i; j > 1; j--)
+            pom /= j;
+        vysledek += pom;
+    }
+
+    return 1 + vysledek;
 }
 
 double taylorcf_pow(double x, double y, unsigned int n){
+    double vysledek = 0, pom;
+    double pow_y = 1, pow_log = 1;
+    for(unsigned int i = 1; i <= n; i++){
+        pow_y *= y;
+        pow_log *= cfrac_log(x, n);
+        pom = pow_y * pow_log;
+        for(unsigned int j = i; j > 1; j--)
+            pom /= j;
+        vysledek += pom;
+    }
 
+
+    return 1 + vysledek;
 }
-
+/*
 
 
 double mylog(double x){
