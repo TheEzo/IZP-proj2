@@ -16,44 +16,38 @@ double cfrac_log(double x, unsigned int n);
 double taylor_pow(double x, double y, unsigned int n);
 double taylorcf_pow(double x, double y, unsigned int n);
 
-int is_number(char * x);
-int parametr_n(char *x);
 int kontrola_pow(double x, double y);
 
-void chyba();
+void chyba(); /* chybovy vystup */
 
 int main(int argc, char **argv) {
     double x = 0;
+    double y = 0;
     unsigned int n = 0;
+    /* promenna pro kontrolu spravnosti zadaneho cisla */
+    char *end_ptr_x = NULL;
+    char *end_ptr_y = NULL;
+    char *end_ptr_n = NULL;
+
     if(argc == 4 && !strcmp(argv[1], "--log")){
-        //if(is_number(argv[2]) && parametr_n(argv[3])) {
-        if(parametr_n(argv[3])){
-            x = strtod(argv[2], NULL);
-            n = strtoul(argv[3], NULL, 10);
-            if(n == 0)
-                chyba();
-            else{
-                printf("       log(%g) = %.12g\n", x, log(x));
-                printf(" cfrac_log(%g) = %.12g\n", x, cfrac_log(x, n));
-                printf("taylor_log(%g) = %.12g\n", x, taylor_log(x, n));
-            }
+        x = strtod(argv[2], &end_ptr_x);
+        n = strtoul(argv[3], &end_ptr_n, 10);
+        if(*end_ptr_n == 0 && *end_ptr_x == 0){
+            printf("       log(%g) = %.12g\n", x, log(x));
+            printf(" cfrac_log(%g) = %.12g\n", x, cfrac_log(x, n));
+            printf("taylor_log(%g) = %.12g\n", x, taylor_log(x, n));
         }
         else
             chyba();
     }
     else if (argc == 5 && !strcmp(argv[1], "--pow")){
-        //if(is_number(argv[2]) && is_number(argv[3]) && parametr_n(argv[4])){
-        if(parametr_n(argv[4])){
-            n = strtoul(argv[4], NULL, 10);
-            x = strtod(argv[2], NULL);
-            double y = strtod(argv[3], NULL);
-            if(n == 0)
-                chyba();
-            else{
-                printf("         pow(%g,%g) = %.12g\n", x, y, pow(x, y));
-                printf("  taylor_pow(%g,%g) = %.12g\n", x, y, taylor_pow(x, y, n));
-                printf("taylorcf_pow(%g,%g) = %.12g\n", x, y, taylorcf_pow(x, y, n));
-            }
+        n = strtoul(argv[4], &end_ptr_n, 10);
+        x = strtod(argv[2], &end_ptr_x);
+        y = strtod(argv[3], &end_ptr_y);
+        if(*end_ptr_n == 0 && *end_ptr_x == 0 && *end_ptr_y == 0) {
+            printf("         pow(%g,%g) = %.12g\n", x, y, pow(x, y));
+            printf("  taylor_pow(%g,%g) = %.12g\n", x, y, taylor_pow(x, y, n));
+            printf("taylorcf_pow(%g,%g) = %.12g\n", x, y, taylorcf_pow(x, y, n));
         }
         else{
             chyba();
@@ -73,31 +67,32 @@ int main(int argc, char **argv) {
  * @return - vraci vysledek [log(x)]
  */
 double taylor_log(double x, unsigned int n){
+    /* osetreni vstupu se kteryma funkce neni schopna pocitat a matematicke definice */
     if(x == 0)
         return -INFINITY;
     if(x == INFINITY)
         return INFINITY;
     if(x == -INFINITY || x < 0)
         return NAN;
-    /*if(x == 0)
-        return -INFINITY;
-    if(x < 0)
-        return NAN;*/
     unsigned int i;
     double pom = 0;
-    double vysledek = 0, pow_x = 1;
-    if(x <= 1) {
-        x = 1-x;
-        for (i = 1; i < n + 1; i++) {
-            pow_x *= x;
-            pom = pow_x / i;
-            vysledek -= pom;
+    double vysledek = 0, pom_x = 1;
+    if(x <= 1) {/*doporucena mezni hodnota ze zadani */
+        /* vyjadreni x ze vzorce */
+        x = 1 - x;
+        /* implementace vzorce */
+        pom_x = x / 1;
+        vysledek -= pom_x;
+        for (i = 2; i < n + 1; i++) {
+            pom_x *= (i - 1) * x / i;
+            vysledek -= pom_x;
         }
     }
     else{
+        /* implementace vzorce */
         for(i = 1; i < n + 1; i++){
-            pow_x *= (x-1) / x;
-            pom = pow_x / i;
+            pom_x *= (x-1) / x;
+            pom = pom_x / i;
             vysledek += pom;
         }
     }
@@ -111,6 +106,7 @@ double taylor_log(double x, unsigned int n){
  * @return - vraci vysledek [log(x)]
  */
 double cfrac_log(double x, unsigned int n){
+    /* osetreni vstupu se kteryma funkce neni schopna pocitat a matematicke definice */
     if(x == 0)
         return -INFINITY;
     if(x == INFINITY)
@@ -119,10 +115,13 @@ double cfrac_log(double x, unsigned int n){
         return NAN;
 
     double vysledek = 0;
+    /* vyjadreni x ze vzorce */
     x = (x - 1) / (x + 1);
     unsigned int cislo = 2 * n + 1;
+    double pow_x = x*x;
+    /* implementace vzorce */
     for(unsigned int i = n; i > 0 && cislo >= 3; i--){
-        vysledek = (i*i * x*x) / (cislo - vysledek);
+        vysledek = i*i * pow_x / (cislo - vysledek);
         cislo -= 2;
     }
     return (2 * x)/ (1 - vysledek);
@@ -137,13 +136,17 @@ double cfrac_log(double x, unsigned int n){
  * @return - vysledek x^y
  */
 double taylor_pow(double x, double y, unsigned int n){
+    /* osetreni vstupu se kteryma funkce neni schopna pocitat a matematicke definice */
+    if(x < 1 && x > 0 && y == INFINITY)
+        return 0;
+    if(x < 1 && x > 0 && y == -INFINITY)
+        return INFINITY;
+    if(x < 0 && x > -1 && y == INFINITY)
+        return 0;
     if((x == INFINITY || x == -INFINITY) && y > 0)
         return INFINITY;
     if(x != 0 && y == INFINITY)
         return INFINITY;
-    if(y == INFINITY || y == -INFINITY || y == NAN || y == -NAN || x == INFINITY || x == -INFINITY ||
-       x == NAN || x == -NAN)
-        return kontrola_pow(x,y);
     if(x < 0)
         return NAN;
     if(x == 1)
@@ -154,9 +157,15 @@ double taylor_pow(double x, double y, unsigned int n){
         return 0;
     if(x != 0 && y == 0)
         return 1;
+    if(y == INFINITY || y == -INFINITY || y == NAN || y == -NAN || x == INFINITY || x == -INFINITY ||
+       x == NAN || x == -NAN)
+        return kontrola_pow(x,y);
+
 
     double vysledek = 0, pom = 1;
+    /* ulozeni vysledku do promenne kvuli optimalizace */
     x = taylor_log(x, n);
+    /* implementace vzorce */
     for(unsigned int i = 1; i <= n; i++){
         pom *= y * x / i;
         vysledek += pom;
@@ -173,13 +182,17 @@ double taylor_pow(double x, double y, unsigned int n){
  * @return - vysledek x^y
  */
 double taylorcf_pow(double x, double y, unsigned int n){
+    /* osetreni vstupu se kteryma funkce neni schopna pocitat a matematicke definice */
+    if(x < 1 && x > 0 && y == INFINITY)
+        return 0;
+    if(x < 1 && x > 0 && y == -INFINITY)
+        return INFINITY;
+    if(x < 0 && x > -1 && y == INFINITY)
+        return 0;
     if((x == INFINITY || x == -INFINITY) && y > 0)
         return INFINITY;
     if(x != 0 && y == INFINITY)
         return INFINITY;
-    if(y == INFINITY || y == -INFINITY || y == NAN || y == -NAN || x == INFINITY || x == -INFINITY ||
-        x == NAN || x == -NAN)
-        return kontrola_pow(x,y);
     if(x < 0)
         return NAN;
     if(x == 1)
@@ -190,10 +203,16 @@ double taylorcf_pow(double x, double y, unsigned int n){
         return 0;
     if(x != 0 && y == 0)
         return 1;
+    if(y == INFINITY || y == -INFINITY || y == NAN || y == -NAN || x == INFINITY || x == -INFINITY ||
+        x == NAN || x == -NAN)
+        return kontrola_pow(x,y);
+
 
 
     double vysledek = 0, pom = 1;
+    /* ulozeni vysledku do promenne kvuli optimalizace */
     x = cfrac_log(x, n);
+    /* implementace vzorce */
     for(unsigned int i = 1; i <= n; i++){
         pom *= y * x / i;
         vysledek += pom;
@@ -206,20 +225,19 @@ void chyba(){
     printf("Spatne zadane parametry.\n");
 }
 
-int parametr_n(char *x){
-    for(unsigned int i = 0; i < strlen(x); i++)
-        if(x[i] < '0' || x[i] > '9')
-            return 0;
-    return 1;
-}
-
+/**
+ * doplnujici kontrolni funkce
+ * @param x
+ * @param y
+ * @return - chybovy stav
+ */
 int kontrola_pow(double x, double y){
+    if((x == 1 || x == -1) && (y == INFINITY || y == -INFINITY))
+        return 1;
     if(y == NAN && x == 1)
         return 1;
     if(x == 0 && y == INFINITY)
         return 0;
-    if(x == NAN || y == NAN || x == -NAN || y == -NAN)
-        return NAN;
     if(x == NAN || x == -NAN)
         return NAN;
     if(x == INFINITY && y < 0)
@@ -229,67 +247,3 @@ int kontrola_pow(double x, double y){
 
     return 0;
 }
-
-
-/*
-int is_number(char *x){
-    (void)x;
-
-
-    if(!strcmp(x, "nan") || !strcmp(x, "-nan") || !strcmp(x, "inf") || !strcmp(x, "-inf"))
-        return 1;
-    int tecka = 0, e = 0;
-    unsigned int i = 1;
-    if(x[0] != '-' && x[0] != '.')
-        if(x[0] > '9' || x[0] < '0'){
-            if(x[0] == 'e' && (x[1] == '+' || x[1] == '-')){
-                if(strlen(x) > 2){
-                    e++;
-                    i++;
-                }
-                else
-                    return 0;
-            }
-            else
-                return 0;
-        }
-
-    if(x[0] == '.')
-        tecka++;
-
-    for(; i < strlen(x); i++){
-        if(x[i] == '.')
-            tecka++;
-        else if(x[i] == 'e' && (x[i+1] == '+' || x[i+1] == '-'))
-            e++;
-        else if(x[i] < '0' || x[i] > '9')
-            return 0;
-        else if(e != 0 && x[i] == '.')
-            return 0;
-
-    }
-    if(tecka <= 1 || e <= 1)
-        return 1;
-    return 0;
-    //return 1;
-    *
-    if(!strcmp(x, "nan") || !strcmp(x, "-nan") || !strcmp(x, "inf") || !strcmp(x, "-inf"))
-        return 1;
-    int tecka = 0;
-    if(x[0] != '-' || x[0] > '9' || x[0] < '0')                        //x[0] != 'e' || x[0] != '+')
-        return 0;
-    for(unsigned int i = 1; i < strlen(x); i++) {
-        if (x[i] == '.')
-            tecka++;
-        else if (x[i] < '0' || x[i] > '9')
-            return 0;
-        else if (!(x[i] == 'e' && (x[i+1] == '+' || x[i+1] == '-')))
-            return 0;
-    }
-    if(tecka <= 1)
-        return 1;
-    printf("Here\n");
-    return 0;
-     *
-}
-*/
